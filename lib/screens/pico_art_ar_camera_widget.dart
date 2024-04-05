@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:camerapicoart/utils/shape_maker.dart';
 import 'package:downloadsfolder/downloadsfolder.dart' as downloads_folder;
@@ -7,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
-import 'package:gesture_x_detector/gesture_x_detector.dart';
 import 'package:screenshot/screenshot.dart';
 
 import '../models/art_data.dart';
@@ -17,9 +15,7 @@ import 'ar_indicator_unity_widget.dart';
 class PicoArtARCameraWidget extends StatefulWidget {
   final ArtData art;
 
-  PicoArtARCameraWidget({super.key, required this.art}) {
-    if (kDebugMode) print('Art to load: ${art.toJson()}');
-  }
+  const PicoArtARCameraWidget({super.key, required this.art});
 
   @override
   State<PicoArtARCameraWidget> createState() => _PicoArtARCameraWidgetState();
@@ -32,12 +28,15 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
   bool _showJoysticks = false;
   bool _showPlane = false;
   bool _takingPicture = false;
-  num initScale = 1.0;
-  num factorScale = 1.0;
+  bool _loadingArt = false;
 
   @override
   void initState() {
+    if (kDebugMode) print('initState::PicoArtARCameraWidget');
     _controller.messageErrorDispatcher = _showSnackBar;
+    if (_controller.sceneIsLoaded) {
+      _onSceneLoaded();
+    }
     super.initState();
   }
 
@@ -51,28 +50,19 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        XGestureDetector(
-          onTap: _onTap,
-          onScaleStart: _onScaleStart,
-          onScaleUpdate: _onScaleUpdate,
-          onMoveUpdate: _onMoveUpdate,
-          child: AbsorbPointer(
-            child: Flex(
-              direction: Axis.vertical,
-              children: [
-                Expanded(
-                  child: Screenshot(
-                    controller: _screenshotController,
-                    child: ARIndicatorUnityWidget(
-                      controller: _controller,
-                      indicator: widget.art,
-                      onReady: _onReady,
-                    ),
-                  ),
+        Flex(
+          direction: Axis.vertical,
+          children: [
+            Expanded(
+              child: Screenshot(
+                controller: _screenshotController,
+                child: ARIndicatorUnityWidget(
+                  controller: _controller,
+                  onSceneLoaded: _onSceneLoaded,
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
         Positioned(
           bottom: 0,
@@ -117,6 +107,7 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
           ),
         ),
         if (_showJoysticks) _joyStickToMoveIndicator(),
+        if (_loadingArt) _loadingIndicator(),
       ],
     );
   }
@@ -138,33 +129,13 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
       itemFactory(_showJoysticks ? 'Hide Joysticks' : 'Show Joysticks', Icons.gamepad, onTap: _toggleJoysticks),
       itemFactory(_showPlane ? 'Hide Plane' : 'Show Plane', Icons.grid_on, onTap: _togglePlane),
       itemFactory('Clear planes', Icons.clear, onTap: _controller.clearPlanes),
-      itemFactory('Reload art', Icons.image, onTap: _reloadArt),
+      itemFactory('Reload art', Icons.image, onTap: _loadArt),
     ];
   }
 
-  Future _onReady() async {
+  Future _onSceneLoaded() async {
     _showPlane = await _controller.statePlanes();
-    setState(() {});
-  }
-
-  void _onTap(TapEvent event) {
-    if (kDebugMode) print("OnTap: ${event.localPos}");
-  }
-
-  void _onScaleStart(Offset event) {
-    initScale = factorScale;
-  }
-
-  void _onScaleUpdate(ScaleEvent event) async {
-    factorScale = initScale * event.scale;
-    const rotateSpeed = 0.2;
-    await _controller.setFactorScaleIndicator(factorScale);
-    await _controller.rotateIndicator(-_rad2deg(event.rotationAngle) * rotateSpeed);
-  }
-
-  void _onMoveUpdate(MoveEvent details) {
-    const speed = 6;
-    _controller.moveIndicator(Vector2(details.delta.dx * speed, -details.delta.dy * speed));
+    await _loadArt();
   }
 
   Future _onPressedTakePicture() async {
@@ -174,10 +145,12 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
     setState(() => _takingPicture = false);
   }
 
-  void _reloadArt() async {
-    await _controller.setIndicator(widget.art);
-    initScale = 1.0;
-    factorScale = 1.0;
+  Future _loadArt() async {
+    setState(() => _loadingArt = true);
+    await _controller
+        .setIndicator(widget.art)
+        .catchError((error) => _showSnackBar('Error loading art: $error, please try again'))
+        .whenComplete(() => setState(() => _loadingArt = false));
   }
 
   Future _takePicture() async {
@@ -234,7 +207,7 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
         children: [
           Column(
             children: [
-              const Text('Move', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              _textJoy('Move'),
               const SizedBox(height: 10),
               SizedBox(
                 width: joystickSize,
@@ -254,7 +227,7 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
           ),
           Column(
             children: [
-              const Text('Rotate', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              _textJoy('Rotate'),
               const SizedBox(height: 10),
               SizedBox(
                 width: joystickSize,
@@ -276,9 +249,43 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
       ),
     );
   }
-}
 
-double _rad2deg(double rad) => rad * 180 / pi;
+  Widget _loadingIndicator() {
+    return const Positioned(
+      top: 15,
+      left: 15,
+      child: Column(
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(width: 10),
+          Text('Loading art...'),
+        ],
+      ),
+    );
+  }
+
+  Widget _textJoy(String text) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10), // Define el radio de las esquinas
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color.fromRGBO(193, 39, 44, 1), Color.fromARGB(255, 223, 198, 166)],
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5), // Añade espacio dentro del contenedor
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.white, // Color del texto
+        ),
+      ),
+    );
+  }
+}
 
 class JoystickTwoArrowsStick extends StatelessWidget {
   final double size;
