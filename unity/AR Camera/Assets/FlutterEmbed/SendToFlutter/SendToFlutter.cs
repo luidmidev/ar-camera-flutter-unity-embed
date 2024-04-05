@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Log;
 using UnityEngine;
+using static UnityEngine.RuntimePlatform;
 
 namespace FlutterEmbed.SendToFlutter
 {
@@ -14,7 +15,7 @@ namespace FlutterEmbed.SendToFlutter
 #endif
             try
             {
-                if (Application.platform == RuntimePlatform.Android)
+                if (Application.platform is Android)
                 {
                     // Use reflection to call the relevant static Kotlin method in the Android plugin
                     using var sendToFlutterClass = new AndroidJavaClass("com.learntoflutter.flutter_embed_unity_android.messaging.SendToFlutter");
@@ -22,12 +23,10 @@ namespace FlutterEmbed.SendToFlutter
                 }
                 else
                 {
-/*
 #if UNITY_IOS
                 // Call an obj-C function name
                 FlutterEmbedUnityIos_sendToFlutter(data);
 #endif
-*/
                 }
             }
             catch (Exception e)
@@ -36,7 +35,7 @@ namespace FlutterEmbed.SendToFlutter
                 Debug.LogException(e);
             }
         }
-/*
+
 #if UNITY_IOS
     // On iOS plugins are statically linked into the executable,
     // so we have to use __Internal as the library name.
@@ -44,6 +43,5 @@ namespace FlutterEmbed.SendToFlutter
     // This function is defined in flutter_embed_unity_2022_3_ios/ios/Classes/SendToFlutter.swift
     private static extern void FlutterEmbedUnityIos_sendToFlutter(string data);
 #endif
-*/
     }
 }
