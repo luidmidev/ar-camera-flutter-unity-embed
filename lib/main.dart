@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import '/widget/pico_art_ar_camera_widget.dart';
-
+import 'screens/pico_art_ar_camera_widget.dart';
 import 'models/art_data.dart';
+import 'models/size.dart' show Size;
 
 final ArtData exampleArtData = ArtData(
   url: "https://zicoart.eventmix.net/app/servicios_api/cliente/art/api_get_file_v1.php",
   token: "75b1570b9a5950c9125f8036d5834a75",
   userId: "S2UBDehNFnxVGcshLyBUsLHu71uGEI+JyuJBNpBwvTQ=",
   artId: 5,
+  size: Size(width: 100),
 );
 
 void main() {
   runApp(const MaterialApp(home: HomePage()));
 }
-
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

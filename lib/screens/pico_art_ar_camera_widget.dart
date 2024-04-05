@@ -10,7 +10,7 @@ import 'package:screenshot/screenshot.dart';
 
 import '../models/art_data.dart';
 import '../models/vector_2.dart';
-import 'ar_indicator_unity_widget.dart';
+import '../widget/ar_indicator_unity_widget.dart';
 
 class PicoArtARCameraWidget extends StatefulWidget {
   final ArtData art;
@@ -32,11 +32,7 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
 
   @override
   void initState() {
-    if (kDebugMode) print('initState::PicoArtARCameraWidget');
-    _controller.messageErrorDispatcher = _showSnackBar;
-    if (_controller.sceneIsLoaded) {
-      _onSceneLoaded();
-    }
+    _onMounted();
     super.initState();
   }
 
@@ -59,6 +55,7 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
                 child: ARIndicatorUnityWidget(
                   controller: _controller,
                   onSceneLoaded: _onSceneLoaded,
+                  onMounted: _onMounted,
                 ),
               ),
             ),
@@ -131,6 +128,13 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
       itemFactory('Clear planes', Icons.clear, onTap: _controller.clearPlanes),
       itemFactory('Reload art', Icons.image, onTap: _loadArt),
     ];
+  }
+
+  _onMounted() {
+    if (kDebugMode) print('initState::PicoArtARCameraWidget, sceneIsLoaded: ${ARIndicatorUnityWidget.sceneIsLoaded}');
+    if (ARIndicatorUnityWidget.sceneIsLoaded) {
+      _onSceneLoaded();
+    }
   }
 
   Future _onSceneLoaded() async {
@@ -256,9 +260,11 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
       left: 15,
       child: Column(
         children: [
-          CircularProgressIndicator(),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation(Colors.white),
+          ),
           SizedBox(width: 10),
-          Text('Loading art...'),
+          Text('Loading art...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ],
       ),
     );

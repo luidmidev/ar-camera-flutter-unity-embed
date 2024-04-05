@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-
 const num defaultWidth = 0.5;
 
 class Size {
@@ -9,11 +8,15 @@ class Size {
 
   Size({this.width, this.height});
 
-  String toJson() {
-    return jsonEncode({
+  String toJsonString() {
+    return jsonEncode(toJson());
+  }
+
+  Map<String, num?> toJson() {
+    return {
       'width': width,
       'height': height,
-    });
+    };
   }
 
   void copyWith(Size size) {
