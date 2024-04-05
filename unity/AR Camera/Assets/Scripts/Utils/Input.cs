@@ -2,12 +2,14 @@
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 using UnityEngine.Assertions;
+using static UnityEngine.RuntimePlatform;
 
 namespace Utils
 {
     public static class Input
     {
-        private static bool TouchSupported => UnityEngine.Input.touchSupported;
+        private static bool TouchSupported => Application.platform is Android or IPhonePlayer || UnityEngine.Input.touchSupported;
+
         private static Touch? FakeTouch => SimulateTouchWithMouse.Instance.FakeTouch;
 
         public static bool GetButton(string buttonName)

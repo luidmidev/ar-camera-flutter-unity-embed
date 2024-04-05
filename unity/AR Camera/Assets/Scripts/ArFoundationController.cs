@@ -142,7 +142,9 @@ public class ArFoundationController : MonoBehaviour
     private void Update()
     {
         MoveIndicatorWithTouch();
+
         RotateIndicatorWithTouch();
+
         ConstraintOffset(offset: ref positionScreenOffset);
 
         var ray = CenterScreen + positionScreenOffset;
@@ -188,16 +190,20 @@ public class ArFoundationController : MonoBehaviour
         if (Input.touchCount != 2) return;
         var touchZero = Input.GetTouch(0);
         var touchOne = Input.GetTouch(1);
-        if (touchZero.phase is not Moved || touchOne.phase is not Moved) return;
-        var touchZeroPrevPos = touchZero.position - touchZero.deltaPosition;
-        var touchOnePrevPos = touchOne.position - touchOne.deltaPosition;
 
-        var prevSlope = MathFunc.CalculateSlope(touchZeroPrevPos, touchOnePrevPos);
-        var currentSlope = MathFunc.CalculateSlope(touchZero.position, touchOne.position);
+        if (touchZero.phase is Moved || touchOne.phase is Moved)
+        {
+            var touchZeroPrevPos = touchZero.position - touchZero.deltaPosition;
+            var touchOnePrevPos = touchOne.position - touchOne.deltaPosition;
 
-        var angle = Mathf.Atan((currentSlope - prevSlope) / (1 + prevSlope * currentSlope)) * Mathf.Rad2Deg;
+            var prevSlope = MathFunc.CalculateSlope(touchZeroPrevPos, touchOnePrevPos);
+            var currentSlope = MathFunc.CalculateSlope(touchZero.position, touchOne.position);
 
-        RotateIndicator(-angle);
+            var angle = Mathf.Atan((currentSlope - prevSlope) / (1 + prevSlope * currentSlope)) * Mathf.Rad2Deg;
+
+            RotateIndicator(-angle);
+        }
+
     }
 
     private void RegisterRoutes()
