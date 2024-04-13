@@ -138,7 +138,8 @@ class _PicoArtARCameraWidgetState extends State<PicoArtARCameraWidget> {
   }
 
   Future _onSceneLoaded() async {
-    _showPlane = await _controller.statePlanes();
+    await _controller.hidePlanes();
+    _showPlane = false;
     await _loadArt();
   }
 

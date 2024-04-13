@@ -26,6 +26,7 @@ class ARIndicatorUnityWidget extends StatefulWidget {
 class _ARIndicatorUnityWidgetState extends State<ARIndicatorUnityWidget> {
   void onUnityMessage(String message) {
     if (kDebugMode) print("Received message from unity: ${message.toString()}");
+
     if (message.startsWith(onLoadScenePrefix)) {
       ARIndicatorUnityWidget.sceneIsLoaded = true;
       widget.onSceneLoaded();
